@@ -35,8 +35,8 @@ import {
   Waves,
   X,
 } from "lucide-react";
-import { playSound } from "./utils/sound";
-import { supabase } from "./lib/supabase";
+import { playSound } from "./sound";
+import { supabase } from "./supabase";
 import "./src/styles.css";
 
 const iconMap = {

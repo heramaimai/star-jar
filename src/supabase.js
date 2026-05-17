@@ -1,6 +1,15 @@
-import { createClient } from "@supabase/supabase-js";
-
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = {
+  auth: {
+    getSession: async () => ({ data: { session: null }, error: null }),
+    onAuthStateChange: () => ({
+      data: {
+        subscription: {
+          unsubscribe: () => {},
+        },
+      },
+    }),
+    signInWithOtp: async () => ({ data: null, error: null }),
+    verifyOtp: async () => ({ data: { user: null }, error: null }),
+    signOut: async () => ({ error: null }),
+  },
+};

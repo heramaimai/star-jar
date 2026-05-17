@@ -37,7 +37,7 @@ import {
 } from "lucide-react";
 import { playSound } from "./sound";
 import { supabase } from "./supabase";
-import "./src/styles.css";
+import "./styles.css";
 
 const iconMap = {
   sun: Sun,

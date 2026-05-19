@@ -223,6 +223,13 @@ button {
   gap: 8px;
 }
 
+.login-helper {
+  margin: 0;
+  color: #75644b;
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
 .verify-login {
   grid-template-columns: minmax(0, 1fr) auto;
 }
@@ -3585,6 +3592,55 @@ body {
 .specimen-sticker.small,
 .specimen-sticker.tiny {
   border-radius: 9px;
+}
+
+/* Care cards use explicit pages so desktop and mobile both work without a trackpad. */
+.care-grid.watercolor-grid {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.care-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding-top: 16px;
+}
+
+.care-pager > button {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 30px;
+  border: 2px solid var(--px-line, #6e5b42);
+  background: #fff7df;
+  color: #5d4f3e;
+  box-shadow: 3px 3px 0 rgba(216, 195, 157, 0.8);
+  cursor: pointer;
+}
+
+.care-pager .pager-dots {
+  padding-top: 0;
+}
+
+.pager-dots button {
+  width: 11px;
+  height: 11px;
+  border: 0;
+  border-radius: 50%;
+  background: #d7c29a;
+  cursor: pointer;
+}
+
+.pager-dots button.active {
+  background: #6c7545;
+}
+
+@media (max-width: 640px) {
+  .care-grid.watercolor-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
 }
 
 /* Glass jar redesign */

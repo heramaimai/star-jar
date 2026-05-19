@@ -6,6 +6,8 @@ import {
   BookOpen,
   Camera,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Coffee,
   Copy,
   Download,
@@ -36,7 +38,7 @@ import {
   X,
 } from "lucide-react";
 import { playSound } from "./utils/sound";
-import { supabase } from "./lib/supabase";
+import { isSupabaseConfigured, supabase } from "./lib/supabase";
 import "./styles.css";
 
 const iconMap = {
@@ -573,6 +575,11 @@ function HomePage(props) {
     setSoundPreset,
     playSelectedDropSound,
   } = props;
+  const carePageSize = 10;
+  const carePages = Math.max(1, Math.ceil(actions.slice(0, 20).length / carePageSize));
+  const [carePage, setCarePage] = useState(0);
+  const visibleActions = actions.slice(0, 20).slice(carePage * carePageSize, (carePage + 1) * carePageSize);
+  const goCarePage = (nextPage) => setCarePage((nextPage + carePages) % carePages);
 
   return (
     <>
@@ -625,11 +632,29 @@ function HomePage(props) {
       >
         <SoundPicker value={soundPreset} onChange={setSoundPreset} onTest={playSelectedDropSound} />
         <div className="care-grid watercolor-grid">
-          {actions.slice(0, 20).map((action) => (
+          {visibleActions.map((action) => (
             <CareCard key={action.id} action={action} onClick={() => collectAction(action)} />
           ))}
         </div>
-        <div className="pager-dots"><span /><span /><span /><span /></div>
+        <div className="care-pager" aria-label="小事分页">
+          <button type="button" onClick={() => goCarePage(carePage - 1)} aria-label="上一页">
+            <ChevronLeft size={17} />
+          </button>
+          <div className="pager-dots">
+            {Array.from({ length: carePages }).map((_, index) => (
+              <button
+                aria-label={`第 ${index + 1} 页`}
+                className={index === carePage ? "active" : ""}
+                key={index}
+                onClick={() => setCarePage(index)}
+                type="button"
+              />
+            ))}
+          </div>
+          <button type="button" onClick={() => goCarePage(carePage + 1)} aria-label="下一页">
+            <ChevronRight size={17} />
+          </button>
+        </div>
       </PaperPanel>
 
       <PaperPanel title="我的星星罐" action={<span>点开查看</span>}>
@@ -772,13 +797,17 @@ function MenuDrawer({ open, onClose, user, setUser, specimens }) {
       return;
     }
     setAuthLoading(true);
-    const { error } = await supabase.auth.signInWithOtp({ email: cleanEmail });
+    const { error } = await supabase.auth.signInWithOtp({
+      email: cleanEmail,
+      options: { shouldCreateUser: true },
+    });
     setAuthLoading(false);
     if (error) {
       setLoginStatus(error.message || "验证码没有发送成功，请再试一次。");
       return;
     }
     setOtpSent(true);
+    setCodeInput("");
     setLoginStatus("验证码已发送到你的邮箱。");
   };
 
@@ -981,6 +1010,9 @@ function MenuDrawer({ open, onClose, user, setUser, specimens }) {
             </div>
           ) : (
             <div className="code-login">
+              <p className="login-helper">
+                {isSupabaseConfigured ? "邮箱验证码登录 · 输入邮箱后查收 8 位验证码" : "邮箱登录暂未启用：请先配置 Supabase 环境变量"}
+              </p>
               <form className="email-login" onSubmit={sendCode}>
                 <Mail size={17} />
                 <input value={email} onChange={(event) => setEmail(event.target.value)} placeholder="输入邮箱" type="email" />

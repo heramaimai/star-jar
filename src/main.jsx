@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
   Bath,
@@ -175,6 +175,7 @@ const therapistReplies = [
 ];
 
 const todayKey = () => new Date().toISOString().slice(0, 10);
+const APP_STATE_TABLE = "app_states";
 
 const offsetDateKey = (offset) => {
   const date = new Date();
@@ -246,6 +247,8 @@ function App() {
   const [fallingSpecimen, setFallingSpecimen] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [user, setUser] = useState(null);
+  const [stateLoaded, setStateLoaded] = useState(false);
+  const saveStateTimer = useRef(null);
   const [therapist, setTherapist] = useState({
     hair: "bun",
     face: "soft",
@@ -271,6 +274,87 @@ function App() {
       authListener.subscription.unsubscribe();
     };
   }, []);
+
+  const appState = useMemo(
+    () => ({
+      actions,
+      entries,
+      records,
+      note,
+      mood,
+      diary,
+      diaries,
+      soundPreset,
+      specimens,
+      selectedSpecimenDate,
+      therapist,
+      night,
+    }),
+    [actions, entries, records, note, mood, diary, diaries, soundPreset, specimens, selectedSpecimenDate, therapist, night],
+  );
+
+  useEffect(() => {
+    let active = true;
+
+    if (!user || !isSupabaseConfigured) {
+      setStateLoaded(false);
+      return () => {
+        active = false;
+      };
+    }
+
+    setStateLoaded(false);
+    supabase
+      .from(APP_STATE_TABLE)
+      .select("data")
+      .eq("user_id", user.id)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (!active) return;
+        if (error) {
+          console.warn("读取星星罐记录失败：", error.message);
+          setStateLoaded(true);
+          return;
+        }
+
+        const saved = data?.data;
+        if (saved) {
+          if (Array.isArray(saved.actions)) setActions(saved.actions);
+          if (Array.isArray(saved.entries)) setEntries(saved.entries);
+          if (Array.isArray(saved.records)) setRecords(saved.records);
+          if (typeof saved.note === "string") setNote(saved.note);
+          if (typeof saved.mood === "string") setMood(saved.mood);
+          if (typeof saved.diary === "string") setDiary(saved.diary);
+          if (Array.isArray(saved.diaries)) setDiaries(saved.diaries);
+          if (typeof saved.soundPreset === "string") setSoundPreset(saved.soundPreset);
+          if (Array.isArray(saved.specimens)) setSpecimens(saved.specimens);
+          if (typeof saved.selectedSpecimenDate === "string") setSelectedSpecimenDate(saved.selectedSpecimenDate);
+          if (saved.therapist && typeof saved.therapist === "object") setTherapist(saved.therapist);
+          if (typeof saved.night === "boolean") setNight(saved.night);
+        }
+        setStateLoaded(true);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [user]);
+
+  useEffect(() => {
+    if (!user || !stateLoaded || !isSupabaseConfigured) return undefined;
+
+    window.clearTimeout(saveStateTimer.current);
+    saveStateTimer.current = window.setTimeout(async () => {
+      const { error } = await supabase.from(APP_STATE_TABLE).upsert({
+        user_id: user.id,
+        data: appState,
+        updated_at: new Date().toISOString(),
+      });
+      if (error) console.warn("保存星星罐记录失败：", error.message);
+    }, 700);
+
+    return () => window.clearTimeout(saveStateTimer.current);
+  }, [appState, stateLoaded, user]);
 
   const setActiveTab = (tab) => {
     setActiveTabState(tab);
@@ -447,10 +531,13 @@ function App() {
 
   const openSpecimenModal = (file) => {
     if (!file) return;
-    const image = URL.createObjectURL(file);
-    setPendingSpecimen({ image });
-    setSpecimenName("");
-    setSpecimenJar("joy");
+    const reader = new FileReader();
+    reader.onload = () => {
+      setPendingSpecimen({ image: reader.result });
+      setSpecimenName("");
+      setSpecimenJar("joy");
+    };
+    reader.readAsDataURL(file);
   };
 
   const saveSpecimen = () => {
@@ -547,6 +634,7 @@ function App() {
         user={user}
         setUser={setUser}
         specimens={specimens}
+        stateLoaded={stateLoaded}
       />
 
       <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} />
@@ -775,7 +863,7 @@ function StarJar({ jar, count, open, entries, onToggle }) {
   );
 }
 
-function MenuDrawer({ open, onClose, user, setUser, specimens }) {
+function MenuDrawer({ open, onClose, user, setUser, specimens, stateLoaded }) {
   const [email, setEmail] = useState("");
   const [codeInput, setCodeInput] = useState("");
   const [loginStatus, setLoginStatus] = useState("");
@@ -1006,6 +1094,7 @@ function MenuDrawer({ open, onClose, user, setUser, specimens }) {
               <UserCheck size={18} />
               <span>已用邮箱登录</span>
               <strong>{user.email}</strong>
+              <small>{stateLoaded ? "记录会自动保存到云端" : "正在同步你的记录……"}</small>
               <button onClick={signOut} disabled={authLoading}>{authLoading ? "退出中" : "退出登录"}</button>
             </div>
           ) : (

@@ -277,6 +277,12 @@ button {
   white-space: nowrap;
 }
 
+.login-state small {
+  grid-column: 1 / -1;
+  color: #6f8055;
+  font-size: 0.76rem;
+}
+
 .login-state button {
   grid-column: 1 / -1;
   background: #fff3d7;

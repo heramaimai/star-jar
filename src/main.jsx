@@ -1219,14 +1219,21 @@ function TherapistCard({ therapist, note, setNote, onSave }) {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "chat failed");
+      if (data.fallback) {
+        setChatMessages((current) => [
+          ...current,
+          { from: "therapist", text: `豆包接口还没有启用：缺少 ${data.missingConfig || "ARK 环境变量"}。` },
+        ].slice(-8));
+        return;
+      }
       setChatMessages((current) => [
         ...current,
         { from: "therapist", text: data.reply || fallbackTherapistReply() },
       ].slice(-8));
-    } catch {
+    } catch (error) {
       setChatMessages((current) => [
         ...current,
-        { from: "therapist", text: fallbackTherapistReply() },
+        { from: "therapist", text: `豆包接口暂时没有连上：${error.message || "请检查 /api/chat"}` },
       ].slice(-8));
     } finally {
       setChatLoading(false);

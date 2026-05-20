@@ -887,7 +887,10 @@ function MenuDrawer({ open, onClose, user, setUser, specimens, stateLoaded }) {
     setAuthLoading(true);
     const { error } = await supabase.auth.signInWithOtp({
       email: cleanEmail,
-      options: { shouldCreateUser: true },
+      options: {
+        shouldCreateUser: true,
+        emailRedirectTo: window.location.origin,
+      },
     });
     setAuthLoading(false);
     if (error) {
@@ -908,7 +911,7 @@ function MenuDrawer({ open, onClose, user, setUser, specimens, stateLoaded }) {
       return;
     }
     if (!cleanToken) {
-      setLoginStatus("请输入邮箱收到的 8 位验证码");
+      setLoginStatus("请输入邮箱收到的验证码");
       return;
     }
     setAuthLoading(true);
@@ -1100,7 +1103,7 @@ function MenuDrawer({ open, onClose, user, setUser, specimens, stateLoaded }) {
           ) : (
             <div className="code-login">
               <p className="login-helper">
-                {isSupabaseConfigured ? "邮箱验证码登录 · 输入邮箱后查收 8 位验证码" : "邮箱登录暂未启用：请先配置 Supabase 环境变量"}
+                {isSupabaseConfigured ? "邮箱验证码登录 · 输入邮箱后复制验证码，不用点击邮件链接" : "邮箱登录暂未启用：请先配置 Supabase 环境变量"}
               </p>
               <form className="email-login" onSubmit={sendCode}>
                 <Mail size={17} />
@@ -1112,7 +1115,7 @@ function MenuDrawer({ open, onClose, user, setUser, specimens, stateLoaded }) {
                   <input
                     value={codeInput}
                     onChange={(event) => setCodeInput(event.target.value.replace(/\D/g, "").slice(0, 8))}
-                    placeholder="请输入邮箱收到的 8 位验证码"
+                    placeholder="请输入邮箱收到的验证码"
                     inputMode="numeric"
                     maxLength={8}
                   />
